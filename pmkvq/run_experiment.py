@@ -56,7 +56,7 @@ def _load_model(cfg: RunConfig):
     tok = AutoTokenizer.from_pretrained(cfg.checkpoint)
     model = AutoModelForCausalLM.from_pretrained(
         cfg.checkpoint,
-        torch_dtype=getattr(torch, cfg.dtype),
+        dtype=getattr(torch, cfg.dtype),
         attn_implementation="eager",   # mandatory: exposes attention probs
     )
     model.eval()

@@ -1,3 +1,12 @@
+# Set VIRTUAL_ENV (and put .venv/bin ahead for interactive `mise exec`) so the
+# uv-managed project venv is the active one. Tasks below still invoke `uv run`
+# explicitly: an external toolchain on PATH (e.g. ESP-IDF's python) can sit
+# ahead of .venv/bin in a task shell and shadow a bare `python`. `uv run`
+# resolves the project venv regardless. Run `mise run setup` (uv sync) first.
+[env]
+_.python.venv = { path = ".venv", create = false }
+_.path = [".venv/bin"]
+
 [tools]
 python = "3.11"
 uv = "latest"
@@ -9,62 +18,62 @@ run = "uv sync"
 [tasks.test]
 description = "All invariants. Silent on pass, exit 0"
 run = """
-python tests/test_quantizer_floor.py
-python tests/test_injection_mask.py
-python tests/test_eager_attention.py
-python tests/test_fit_recovery.py
+uv run python tests/test_quantizer_floor.py
+uv run python tests/test_injection_mask.py
+uv run python tests/test_eager_attention.py
+uv run python tests/test_fit_recovery.py
 """
 
 [tasks.freeze-predictions]
 description = "Hash and lock predictions/h1_predictions.json"
-run = "python scripts/freeze_predictions.py"
+run = "uv run python scripts/freeze_predictions.py"
 
 [tasks.arm-a]
 description = "P1 and P4. Teacher forced, feedback off"
 depends = ["test", "freeze-predictions"]
-run = "python scripts/run_arm_a.py --out results/arm_a.csv"
+run = "uv run python scripts/run_arm_a.py --out results/arm_a.csv"
 
 [tasks.arm-b]
 description = "P2. Free running, feedback on"
 depends = ["test", "freeze-predictions"]
-run = "python scripts/run_arm_b.py --out results/arm_b.csv"
+run = "uv run python scripts/run_arm_b.py --out results/arm_b.csv"
 
 [tasks.arm-c]
 description = "P5. Impulse injection, sweep t0"
 depends = ["test", "freeze-predictions"]
-run = "python scripts/run_arm_c.py --out results/arm_c.csv"
+run = "uv run python scripts/run_arm_c.py --out results/arm_c.csv"
 
 [tasks.bitsweep]
 description = "P6. Terminal deviation against bit-width"
 depends = ["test", "freeze-predictions"]
-run = "python scripts/run_bitsweep.py --out results/bitsweep.csv"
+run = "uv run python scripts/run_bitsweep.py --out results/bitsweep.csv"
 
 [tasks.fit]
 description = "P3. Log-log regression, bootstrap CI, gamma = sqrt(alpha+1)"
 depends = ["arm-a", "arm-b", "arm-c", "bitsweep"]
-run = "python scripts/fit_all.py --out results/fit.json"
+run = "uv run python scripts/fit_all.py --out results/fit.json"
 
 [tasks.gate]
 description = "Evaluate fit.json against the frozen predictions"
 depends = ["fit"]
-run = "python scripts/gate.py --out results/gate.json"
+run = "uv run python scripts/gate.py --out results/gate.json"
 
 [tasks.assets]
 description = "Render every png and gif under assets/"
 depends = ["fit"]
-run = "python scripts/make_assets.py --outdir assets/"
+run = "uv run python scripts/make_assets.py --outdir assets/"
 
 [tasks.assets-synthetic]
 description = "Render the closed-form assets only. No run required"
-run = "python scripts/make_assets.py --outdir assets/ --synthetic-only"
+run = "uv run python scripts/make_assets.py --outdir assets/ --synthetic-only"
 
 [tasks.nb]
 description = "Register the kernel, install the nbstripout hook, open the article"
 depends = ["setup"]
 run = """
-python -m ipykernel install --user --name pmkvq-h1
-nbstripout --install
-jupyter lab pmkvq_cumulative_error.ipynb
+uv run python -m ipykernel install --user --name pmkvq-h1
+uv run nbstripout --install
+uv run jupyter lab pmkvq_cumulative_error.ipynb
 """
 
 [tasks.h1]

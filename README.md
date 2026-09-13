@@ -1,6 +1,6 @@
 # pmkvq-cumulative-error
 
-Hypothesis **H1**: does per-step KV-cache quantization error *accumulate* with
+Hypothesis: does per-step KV-cache quantization error *accumulate* with
 decode position, or does it saturate? PM-KVQ (arXiv 2505.18610, ICLR 2026)
 asserts accumulation qualitatively. This repo converts the assertion into a
 growth law
@@ -62,12 +62,12 @@ mise run nb                # open the article
 
 | Task | Predictions | Artifact |
 |---|---|---|
-| `arm-a` | P1, P4 | `results/h1_arm_a.csv` |
-| `arm-b` | P2 | `results/h1_arm_b.csv` |
-| `arm-c` | P5 | `results/h1_arm_c.csv` |
-| `bitsweep` | P6 | `results/h1_bitsweep.csv` |
-| `fit` | P3 | `results/h1_fit.json` |
-| `gate` | all | `results/h1_gate.json` |
+| `arm-a` | P1, P4 | `results/arm_a.csv` |
+| `arm-b` | P2 | `results/arm_b.csv` |
+| `arm-c` | P5 | `results/arm_c.csv` |
+| `bitsweep` | P6 | `results/bitsweep.csv` |
+| `fit` | P3 | `results/fit.json` |
+| `gate` | all | `results/gate.json` |
 
 ## Status
 
@@ -80,7 +80,7 @@ which run with only `numpy`/`scipy`. The checkpoint-driven arms
 Qwen3-0.6B checkpoint plus the synced environment to execute. No `results/` or
 `assets/` are committed yet — every gate artifact is produced by a real run.
 
-Run parameters (from the todo): Qwen3-0.6B BF16 reference, group size 128,
+Run parameters: Qwen3-0.6B BF16 reference, group size 128,
 per-channel Key / per-token Value, first 128 and last 128 positions preserved
 in BF16, `b ∈ {16, 8, 6, 4, 3, 2}`, log-spaced `T` over ≥ 2 decades, `N ≥ 16`
 sequences per configuration.

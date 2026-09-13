@@ -33,7 +33,7 @@ def main() -> int:
     try:
         tok = AutoTokenizer.from_pretrained(model_id)
         model = AutoModelForCausalLM.from_pretrained(
-            model_id, torch_dtype=torch.float32, attn_implementation="eager")
+            model_id, dtype=torch.float32, attn_implementation="eager")
         model.eval()
     except Exception as exc:
         # Checkpoint not fetched in this environment; skip rather than false-fail.

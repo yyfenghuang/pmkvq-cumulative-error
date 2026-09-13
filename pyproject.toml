@@ -12,7 +12,10 @@ keywords = ["kv-cache", "quantization", "first-principles"]
 # without it. See tests/test_eager_attention.py.
 dependencies = [
     "torch>=2.2",
-    "transformers==4.44.2",
+    # Qwen3 architecture + its tokenizer.json format need transformers>=4.51
+    # (tokenizers>=0.21). >=4.56 also gives the `dtype` kwarg (torch_dtype is
+    # deprecated there). Older pins fail to parse the checkpoint's tokenizer.
+    "transformers>=4.56,<5",
     "numpy>=1.26",
     "scipy>=1.11",
     "pandas>=2.1",
@@ -27,8 +30,8 @@ dev = [
 ]
 
 [tool.uv]
-# Keep the resolver from silently upgrading transformers past the pinned
-# attention-implementation contract.
+# The eager-attention contract (attn_implementation="eager", output_attentions)
+# is stable across transformers versions; uv.lock pins the exact resolved build.
 package = false
 
 [tool.pytest.ini_options]

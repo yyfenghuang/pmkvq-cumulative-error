@@ -31,7 +31,7 @@ and `show_source` still renders the real definition.
 | `pmkvq/observables.py` | `eps(T)`, `T_eff(T)`, clipping rate, realised `sigma^2` |
 | `pmkvq/run_experiment.py` | `decode_loop` (the feedback switch), `arm_a`, `arm_b`, `arm_c`, `bitsweep` |
 | `pmkvq/analysis.py` | `loglog_fit`, `bootstrap_ci`, `recover_gamma`, `classify_outcome` |
-| `pmkvq/style.py` | brand palette, rcParams, colormaps — the single source for every asset |
+| `pmkvq/style.py` | brand palette, rcParams, colormaps: the single source for every asset |
 | `pmkvq_cumulative_error.ipynb` | the article, written after the runs finish |
 
 `predictions/` holds the frozen thresholds, `scripts/` holds the heavy
@@ -62,11 +62,11 @@ mise run nb                # open the article
 
 | Task | What it predicts | Artifact |
 |---|---|---|
-| `arm-a` | With feedback off, error does not grow — the log-log slope `α ≤ 0` (**P1**) — and it tracks the readout's averaging, `ε ∝ 1/T_eff` (**P4**) | `results/arm_a.csv` |
-| `arm-b` | With feedback on, error grows as a power law, `α > 0` with `R² ≥ 0.9` (**P2**) | `results/arm_b.csv` |
-| `arm-c` | Noise injected at early positions dominates terminal error over the same noise injected late (**P5**) | `results/arm_c.csv` |
-| `bitsweep` | Terminal error falls `6.02 dB` per added bit for `b ≥ 4` (**P6**) | `results/bitsweep.csv` |
-| `fit` | The feedback gain `γ = √(α+1) > 1`, recovered from the arm-A/arm-B slope gap (**P3**) | `results/fit.json` |
+| `arm-a` | With feedback off, error does not grow (log-log slope `α ≤ 0`), and it tracks the readout's averaging, `ε ∝ 1/T_eff` | `results/arm_a.csv` |
+| `arm-b` | With feedback on, error grows as a power law, `α > 0` with `R² ≥ 0.9` | `results/arm_b.csv` |
+| `arm-c` | Noise injected at early positions dominates terminal error over the same noise injected late | `results/arm_c.csv` |
+| `bitsweep` | Terminal error falls `6.02 dB` per added bit for `b ≥ 4`  | `results/bitsweep.csv` |
+| `fit` | The feedback gain `γ = √(α+1) > 1`, recovered from the arm-A/arm-B slope gap | `results/fit.json` |
 | `gate` | Every prediction above, scored against the frozen pass/falsifier thresholds | `results/gate.json` |
 
 ## Status
@@ -78,7 +78,7 @@ which run with only `numpy`/`scipy`. The checkpoint-driven arms
 (`cache_hook.py` cache classes, `run_experiment.py`) are implemented against
 `transformers==4.44.2` with `attn_implementation="eager"` and require a
 Qwen3-0.6B checkpoint plus the synced environment to execute. No `results/` or
-`assets/` are committed yet — every gate artifact is produced by a real run.
+`assets/` are committed yet; every gate artifact is produced by a real run.
 
 Run parameters: Qwen3-0.6B BF16 reference, group size 128,
 per-channel Key / per-token Value, first 128 and last 128 positions preserved

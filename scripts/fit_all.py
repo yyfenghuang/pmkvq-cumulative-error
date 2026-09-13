@@ -2,7 +2,7 @@
 """P3 and the fit summary: log-log regression, bootstrap CI, gamma = sqrt(alpha+1).
 
 Reads the four result CSVs, produces the metrics the gate consumes, and writes
-results/h1_fit.json. Every metric here maps to a prediction:
+results/fit.json. Every metric here maps to a prediction:
 
     alpha_tf                    P1   (Arm A slope)
     alpha_fr                    P2   (Arm B slope)
@@ -45,8 +45,8 @@ def main() -> int:
     out: dict = {}
 
     # P1 / P2: per-arm log-log slope of eps against position, pooled over seqs.
-    arm_a = pd.read_csv(rd / "h1_arm_a.csv")
-    arm_b = pd.read_csv(rd / "h1_arm_b.csv")
+    arm_a = pd.read_csv(rd / "arm_a.csv")
+    arm_b = pd.read_csv(rd / "arm_b.csv")
     fit_a = analysis.loglog_fit(arm_a["position"], arm_a["eps"])
     fit_b = analysis.loglog_fit(arm_b["position"], arm_b["eps"])
     out["alpha_tf"] = fit_a.to_dict()
@@ -73,7 +73,7 @@ def main() -> int:
     out["pearson_r_eps_invTeff_armA"] = float(r)
 
     # P5: Arm C Green's-function ratio, earliest vs latest t0, measured vs pred.
-    arm_c_path = rd / "h1_arm_c.csv"
+    arm_c_path = rd / "arm_c.csv"
     if arm_c_path.exists():
         arm_c = pd.read_csv(arm_c_path)
         term_c = _terminal_by_group(arm_c, "t0")
@@ -90,7 +90,7 @@ def main() -> int:
             }
 
     # P6: dB per bit from the bit-sweep terminal deviation.
-    bs_path = rd / "h1_bitsweep.csv"
+    bs_path = rd / "bitsweep.csv"
     if bs_path.exists():
         bs = pd.read_csv(bs_path)
         term_b = _terminal_by_group(bs, "bit_width")

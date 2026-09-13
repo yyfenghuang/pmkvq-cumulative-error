@@ -22,32 +22,32 @@ run = "python scripts/freeze_predictions.py"
 [tasks.arm-a]
 description = "P1 and P4. Teacher forced, feedback off"
 depends = ["test", "freeze-predictions"]
-run = "python scripts/run_arm_a.py --out results/h1_arm_a.csv"
+run = "python scripts/run_arm_a.py --out results/arm_a.csv"
 
 [tasks.arm-b]
 description = "P2. Free running, feedback on"
 depends = ["test", "freeze-predictions"]
-run = "python scripts/run_arm_b.py --out results/h1_arm_b.csv"
+run = "python scripts/run_arm_b.py --out results/arm_b.csv"
 
 [tasks.arm-c]
 description = "P5. Impulse injection, sweep t0"
 depends = ["test", "freeze-predictions"]
-run = "python scripts/run_arm_c.py --out results/h1_arm_c.csv"
+run = "python scripts/run_arm_c.py --out results/arm_c.csv"
 
 [tasks.bitsweep]
 description = "P6. Terminal deviation against bit-width"
 depends = ["test", "freeze-predictions"]
-run = "python scripts/run_bitsweep.py --out results/h1_bitsweep.csv"
+run = "python scripts/run_bitsweep.py --out results/bitsweep.csv"
 
 [tasks.fit]
 description = "P3. Log-log regression, bootstrap CI, gamma = sqrt(alpha+1)"
 depends = ["arm-a", "arm-b", "arm-c", "bitsweep"]
-run = "python scripts/fit_all.py --out results/h1_fit.json"
+run = "python scripts/fit_all.py --out results/fit.json"
 
 [tasks.gate]
-description = "Evaluate h1_fit.json against the frozen predictions"
+description = "Evaluate fit.json against the frozen predictions"
 depends = ["fit"]
-run = "python scripts/gate.py --out results/h1_gate.json"
+run = "python scripts/gate.py --out results/gate.json"
 
 [tasks.assets]
 description = "Render every png and gif under assets/"

@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-"""Evaluate results/h1_fit.json against the frozen predictions.
+"""Evaluate results/fit.json against the frozen predictions.
 
 Emits a verdict per prediction: PASS, FALSIFIED, or INCONCLUSIVE. The pass and
 falsifier thresholds are read from predictions/h1_predictions.json but the
 comparison for each is coded explicitly here rather than parsed from the string,
-so an ambiguous threshold cannot silently pass. Writes results/h1_gate.json.
+so an ambiguous threshold cannot silently pass. Writes results/gate.json.
 """
 from __future__ import annotations
 
@@ -82,7 +82,7 @@ def evaluate(fit: dict) -> dict:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", required=True)
-    ap.add_argument("--fit", default=str(REPO / "results" / "h1_fit.json"))
+    ap.add_argument("--fit", default=str(REPO / "results" / "fit.json"))
     args = ap.parse_args()
 
     fit_path = Path(args.fit)

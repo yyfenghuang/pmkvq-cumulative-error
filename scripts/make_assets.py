@@ -144,8 +144,8 @@ def _read(results: Path, name: str):
 
 def a5_loglog(outdir: Path, results: Path) -> None:
     """eps against T, both arms, fitted lines with slope annotated (P1/P2/P3)."""
-    arm_a = _read(results, "h1_arm_a.csv")
-    arm_b = _read(results, "h1_arm_b.csv")
+    arm_a = _read(results, "arm_a.csv")
+    arm_b = _read(results, "arm_b.csv")
     if arm_a is None or arm_b is None:
         print("A5 skipped: arm results absent", file=sys.stderr)
         return

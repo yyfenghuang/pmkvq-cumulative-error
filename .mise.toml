@@ -79,3 +79,23 @@ uv run jupyter lab pmkvq_cumulative_error.ipynb
 [tasks.h1]
 description = "Full ladder, artifacts and assets"
 depends = ["arm-a", "arm-b", "arm-c", "bitsweep", "fit", "gate", "assets"]
+
+# Constrained one-shot for CPU / personal-repo runs. Keeps the full T-range
+# (max_new_tokens stays 4096), so the alpha exponent is NOT biased. Cuts only
+# the harmless multipliers: n_sequences 16 -> 4 (the other 12 are bit-identical
+# greedy repeats of the 4 unique prompts) and arm-C's t0 grid 12 -> 6 (coarser
+# Green's function, not a biased one). Writes the same results/*.csv as `h1`, so
+# it OVERWRITES a full run's artifacts. Record the reduced N in notes/deviations.md.
+[tasks.h1-lite]
+description = "Constrained one-shot (4 prompts, full T-range, coarse arm-C). Not silent."
+depends = ["test", "freeze-predictions"]
+run = """
+echo "[h1-lite] arm-a (teacher forced)"      && uv run python scripts/run_arm_a.py    --out results/arm_a.csv    --n-sequences 4
+echo "[h1-lite] arm-b (free running)"        && uv run python scripts/run_arm_b.py    --out results/arm_b.csv    --n-sequences 4
+echo "[h1-lite] arm-c (impulse, 6 t0 pts)"   && uv run python scripts/run_arm_c.py    --out results/arm_c.csv    --n-sequences 4 --n-t0 6
+echo "[h1-lite] bitsweep (6 widths)"         && uv run python scripts/run_bitsweep.py --out results/bitsweep.csv --n-sequences 4
+echo "[h1-lite] fit"                         && uv run python scripts/fit_all.py --out results/fit.json
+echo "[h1-lite] gate"                        && uv run python scripts/gate.py   --out results/gate.json
+echo "[h1-lite] assets"                      && uv run python scripts/make_assets.py --outdir assets/
+echo "[h1-lite] done -> results/{arm_a,arm_b,arm_c,bitsweep,fit,gate}.json/csv, assets/"
+"""

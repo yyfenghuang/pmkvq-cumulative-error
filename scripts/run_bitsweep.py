@@ -27,9 +27,17 @@ def main() -> int:
     ap.add_argument("--t-min", type=int, default=256)
     ap.add_argument("--t-max", type=int, default=4096)
     ap.add_argument("--n-positions", type=int, default=24)
+    ap.add_argument("--n-sequences", type=int, default=None,
+                    help="override RunConfig.n_sequences (default 16). Only 4 prompts are unique.")
+    ap.add_argument("--max-new-tokens", type=int, default=None,
+                    help="override RunConfig.max_new_tokens (default 4096). Lowering it truncates the T-range and biases alpha.")
     args = ap.parse_args()
 
     cfg = run_experiment.RunConfig()
+    if args.n_sequences is not None:
+        cfg.n_sequences = args.n_sequences
+    if args.max_new_tokens is not None:
+        cfg.max_new_tokens = args.max_new_tokens
     cfg.t_positions = tuple(run_experiment.log_positions(args.t_min, args.t_max, args.n_positions))
 
     rows = run_experiment.bitsweep(cfg, load_prompts(args.prompts, cfg.n_sequences))

@@ -60,14 +60,14 @@ mise run h1                # arm-a, arm-b, arm-c, bitsweep, fit, gate, assets
 mise run nb                # open the article
 ```
 
-| Task | Predictions | Artifact |
+| Task | What it predicts | Artifact |
 |---|---|---|
-| `arm-a` | P1, P4 | `results/arm_a.csv` |
-| `arm-b` | P2 | `results/arm_b.csv` |
-| `arm-c` | P5 | `results/arm_c.csv` |
-| `bitsweep` | P6 | `results/bitsweep.csv` |
-| `fit` | P3 | `results/fit.json` |
-| `gate` | all | `results/gate.json` |
+| `arm-a` | With feedback off, error does not grow — the log-log slope `α ≤ 0` (**P1**) — and it tracks the readout's averaging, `ε ∝ 1/T_eff` (**P4**) | `results/arm_a.csv` |
+| `arm-b` | With feedback on, error grows as a power law, `α > 0` with `R² ≥ 0.9` (**P2**) | `results/arm_b.csv` |
+| `arm-c` | Noise injected at early positions dominates terminal error over the same noise injected late (**P5**) | `results/arm_c.csv` |
+| `bitsweep` | Terminal error falls `6.02 dB` per added bit for `b ≥ 4` (**P6**) | `results/bitsweep.csv` |
+| `fit` | The feedback gain `γ = √(α+1) > 1`, recovered from the arm-A/arm-B slope gap (**P3**) | `results/fit.json` |
+| `gate` | Every prediction above, scored against the frozen pass/falsifier thresholds | `results/gate.json` |
 
 ## Status
 

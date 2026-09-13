@@ -14,8 +14,7 @@ paper's claim is exactly the statement $\alpha > 0$, and that statement is now
 falsifiable.
 
 See [`docs/pmkvq-h1-cumulative-error-thinkbook.md`](docs/pmkvq-h1-cumulative-error-thinkbook.md)
-for the derivation and [`docs/pmkvq-h1-todo.md`](docs/pmkvq-h1-todo.md) for the
-build plan this scaffold follows.
+for the derivation note.
 
 ## Layout
 

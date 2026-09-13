@@ -1,0 +1,37 @@
+[project]
+name = "pmkvq-cumulative-error"
+version = "0.1.0"
+description = "H1. Cumulative quantization error in the autoregressive KV cache. A falsifiable growth-law dissection of the PM-KVQ 'cumulative error' claim."
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+license = { text = "MIT" }
+keywords = ["kv-cache", "quantization", "first-principles"]
+
+# eager attention is required: fused and flash kernels do not expose the
+# attention probability tensor, and T_eff(T) = 1 / ||a_T||^2 is unobtainable
+# without it. See tests/test_eager_attention.py.
+dependencies = [
+    "torch>=2.2",
+    "transformers==4.44.2",
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "pandas>=2.1",
+    "matplotlib>=3.8",
+]
+
+[project.optional-dependencies]
+dev = [
+    "jupyterlab>=4.0",
+    "nbstripout>=0.7",
+    "ipykernel>=6.29",
+]
+
+[tool.uv]
+# Keep the resolver from silently upgrading transformers past the pinned
+# attention-implementation contract.
+package = false
+
+[tool.pytest.ini_options]
+# Tests are executable modules (python tests/test_x.py), silent on pass.
+# pytest is optional; the mise `test` task runs them directly.
+addopts = "-q"

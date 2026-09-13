@@ -1,0 +1,8 @@
+{
+  "P1": {"metric": "alpha_tf",            "pass": "<= 0.05",               "falsifier": ">= 0.20 with R2 >= 0.9"},
+  "P2": {"metric": "alpha_fr",            "pass": ">= 0.20 and R2 >= 0.9", "falsifier": "<= 0.05"},
+  "P3": {"metric": "alpha_fr - alpha_tf", "pass": ">= 0.15",               "falsifier": "CI contains 0"},
+  "P4": {"metric": "pearson_r_eps_invTeff_armA", "pass": ">= 0.8",         "falsifier": "<= 0.3"},
+  "P5": {"metric": "G_ratio_early_late",  "pass": "within 2x of Theorem 2","falsifier": "monotonicity reversed"},
+  "P6": {"metric": "db_per_bit",          "pass": "[5.5, 6.5] for b >= 4", "falsifier": "outside [4, 8]"}
+}

@@ -11,6 +11,7 @@ introspection (``show_source``) without a GPU present.
 """
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -18,6 +19,12 @@ import numpy as np
 from pmkvq import cache_hook
 from pmkvq import observables
 from pmkvq import quantizer
+
+# Deterministic cuBLAS requires this to be set before the first CUDA/cuBLAS
+# call, otherwise torch.use_deterministic_algorithms(True) raises on GPU
+# ("CUBLAS_WORKSPACE_CONFIG"). Harmless on CPU. Set at import so it lands
+# before any torch/CUDA context is created.
+os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
 
 
 @dataclass
@@ -35,6 +42,7 @@ class RunConfig:
     bit_widths: tuple[int, ...] = (16, 8, 6, 4, 3, 2)
     t_positions: tuple[int, ...] = field(default_factory=tuple)  # log-spaced, filled by scripts
     seed: int = 0
+    device: str | None = None           # None -> auto: cuda if available, else cpu
 
 
 def log_positions(t_min: int, t_max: int, n: int = 24) -> np.ndarray:
@@ -47,18 +55,29 @@ def log_positions(t_min: int, t_max: int, n: int = 24) -> np.ndarray:
     return pts.astype(int)
 
 
+def _resolve_device(cfg: RunConfig) -> str:
+    """The run device: ``cfg.device`` if set, else cuda when available."""
+    import torch
+
+    if cfg.device:
+        return cfg.device
+    return "cuda" if torch.cuda.is_available() else "cpu"
+
+
 def _load_model(cfg: RunConfig):
-    """Load the checkpoint with eager attention. Lazy, torch-only."""
+    """Load the checkpoint with eager attention on the resolved device. Lazy."""
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     torch.use_deterministic_algorithms(True)
+    device = _resolve_device(cfg)
     tok = AutoTokenizer.from_pretrained(cfg.checkpoint)
     model = AutoModelForCausalLM.from_pretrained(
         cfg.checkpoint,
         dtype=getattr(torch, cfg.dtype),
         attn_implementation="eager",   # mandatory: exposes attention probs
     )
+    model.to(device)
     model.eval()
     return model, tok
 
@@ -84,6 +103,8 @@ def decode_loop(model, tok, input_ids, cfg: RunConfig, *, feedback: bool,
     import torch
 
     torch.manual_seed(seed)
+    device = next(model.parameters()).device
+    input_ids = input_ids.to(device)     # prompt onto the model's device
     # One recorder, two passes per step. It overwrites its buffers on each
     # forward, so we snapshot after the FP pass, then again after the quantized
     # pass, and diff the two snapshots. Keeping a single recorder avoids both

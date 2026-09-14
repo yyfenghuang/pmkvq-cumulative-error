@@ -22,6 +22,7 @@ uv run python tests/test_quantizer_floor.py
 uv run python tests/test_injection_mask.py
 uv run python tests/test_eager_attention.py
 uv run python tests/test_fit_recovery.py
+uv run python tests/test_quant_torch_matches_numpy.py
 """
 
 [tasks.freeze-predictions]

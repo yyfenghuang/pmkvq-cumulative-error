@@ -12,9 +12,10 @@ Two layers live here:
    positions the mask selects. Torch/transformers are imported lazily so layer
    (1) has no heavy dependency.
 
-The quantizer is the reimplemented Definition 1 in ``quantizer.py`` applied via
-a numpy round-trip; keeping one floor definition is deliberate (P6 needs the
-analytic reference).
+The quantizer is the reimplemented Definition 1 in ``quantizer.py``, applied
+on-device by ``fake_quant_torch`` (verified bit-for-bit against the numpy
+reference); keeping one floor definition is deliberate (P6 needs the analytic
+reference).
 """
 from __future__ import annotations
 
@@ -89,6 +90,38 @@ def _require_torch():
     return torch, DynamicCache
 
 
+def fake_quant_torch(x, b: int, group_size: int = quantizer.GROUP_SIZE,
+                     axis: int = -1):
+    """On-device torch port of :func:`quantizer.fake_quant` (Definition 1).
+
+    Bit-for-bit identical to the numpy reference at float64 (pinned by
+    ``tests/test_quant_torch_matches_numpy.py``); run at float32 on GPU it stays
+    on the device, so the KV readout no longer round-trips through host numpy.
+    Group-wise asymmetric uniform quantize-dequantize along ``axis``; a constant
+    group (range 0) round-trips exactly and is passed through unchanged.
+    """
+    import torch
+
+    x = x.movedim(axis, -1)
+    shape = x.shape
+    n = shape[-1]
+    flat = x.reshape(-1, n)
+    out = flat.clone()
+    q_max = float((1 << b) - 1)
+    for start in range(0, n, group_size):
+        g = flat[:, start:start + group_size]
+        g_min = g.amin(dim=1, keepdim=True)
+        g_max = g.amax(dim=1, keepdim=True)
+        R = g_max - g_min
+        pos = R > 0
+        S = torch.where(pos, R / q_max, torch.ones_like(R))
+        Z = torch.round(-g_min / S)
+        q = torch.clamp(torch.round(g / S) + Z, 0.0, q_max)
+        # Constant groups (R == 0) pass through; matches np.where(R > 0, deq, g).
+        out[:, start:start + group_size] = torch.where(pos, S * (q - Z), g)
+    return out.reshape(shape).movedim(-1, axis)
+
+
 def make_quantized_cache(bit_width: int, granularity_key: str = "channel",
                          granularity_value: str = "token",
                          group_size: int = quantizer.GROUP_SIZE,
@@ -124,37 +157,42 @@ def make_quantized_cache(bit_width: int, granularity_key: str = "channel",
             self.window = window
 
         def _quant(self, tensor, per: str):
-            # tensor: [batch, heads, seq, head_dim]
+            # tensor: [batch, heads, seq, head_dim]. Everything stays on the
+            # tensor's device; the group-quant runs in torch (fake_quant_torch)
+            # so there is no host round-trip. Positions outside the injection
+            # mask (preserved bands, and Arm C's non-window) are quantized too,
+            # then restored via torch.where -- token-wise quant is independent
+            # per token, so the restored result is identical to skipping them.
             b, h, s, d = tensor.shape
             mask = injection_mask(s, self.preserve_front, self.preserve_back,
                                   self.window)
-            arr = tensor.detach().to(torch.float32).cpu().numpy()
+            inject = torch.from_numpy(mask).to(tensor.device)   # [s], True=quant
+            work = tensor.detach().to(torch.float32)
             if per == "channel":
                 # group over the sequence axis per (head, channel): move seq last
-                moved = np.moveaxis(arr, 2, -1)          # [b, h, d, s]
-                # position mask applies along the last axis; expand quantizer
-                # over each channel-group of the transposed layout
-                flat = moved.reshape(-1, s)
-                keep = ~mask
-                qtd = quantizer.fake_quant(flat, self.bit_width,
-                                           group_size=self.group_size, axis=-1)
-                qtd[:, keep] = flat[:, keep]
-                moved = qtd.reshape(moved.shape)
-                out = np.moveaxis(moved, -1, 2)          # back to [b, h, s, d]
+                moved = work.movedim(2, -1)               # [b, h, d, s]
+                qtd = fake_quant_torch(moved, self.bit_width,
+                                       group_size=self.group_size, axis=-1)
+                out = torch.where(inject, qtd, moved).movedim(-1, 2)
             else:  # per == "token": group over head_dim, mask over seq
-                out = arr.copy()
-                sel = mask
-                if sel.any():
-                    sub = arr[:, :, sel, :]              # [b, h, n_sel, d]
-                    out[:, :, sel, :] = quantizer.fake_quant(
-                        sub, self.bit_width, group_size=self.group_size, axis=-1)
-            return torch.from_numpy(out.astype(np.float32)).to(
-                dtype=tensor.dtype, device=tensor.device)
+                qtd = fake_quant_torch(work, self.bit_width,
+                                       group_size=self.group_size, axis=-1)
+                out = torch.where(inject.view(s, 1), qtd, work)
+            return out.to(dtype=tensor.dtype)
 
-        def readout(self, layer_idx: int):
-            """Return the (quantized) key/value tensors used for attention."""
-            k = self.key_cache[layer_idx]
-            v = self.value_cache[layer_idx]
+        def update(self, key_states, value_states, layer_idx, cache_kwargs=None):
+            """Store K/V at full precision, return a quantized readout view.
+
+            ``super().update`` appends the new states to the (full-precision)
+            layer cache and returns the whole accumulated ``[b, h, s, d]`` K/V,
+            which is exactly the tensor attention consumes. We quantize a *copy*
+            of that return value; the internal cache stays BF16 so the reference
+            path and the quantized path share identical history. This is the
+            injection point transformers actually calls -- the old ``readout``
+            method was never invoked, so the quantization never fired.
+            """
+            k, v = super().update(key_states, value_states, layer_idx,
+                                  cache_kwargs)
             if self.bit_width >= quantizer.INT16_BITS:
                 return k, v
             return (self._quant(k, self.granularity_key),
